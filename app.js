@@ -3,8 +3,10 @@ var config = require('./config.json');
 var Colors = require('./Colors.js');
 var input = new midi.input();
 var outputHUI = new midi.output();
+var outputOctatrack = new midi.output();
 var inputPort = false;
 var outputHUIPort = false;
+var outputOctatrackPort = false;
 
 for (var i = 0; i < input.getPortCount(); i++)
 {
@@ -19,8 +21,17 @@ for (var i = 0; i < outputHUI.getPortCount(); i++) {
 		break;
 	}
 }
+for (var i = 0; i < outputOctatrack.getPortCount(); i++) {
+	if (outputOctatrack.getPortName(i).indexOf(config.octatrack) !== -1) {
+		outputOctatrackPort = i;
+		break;
+	}
+}
 
-if (inputPort === false || outputHUIPort === false) {
+if (inputPort === false
+	|| outputHUIPort === false
+	|| outputOctatrackPort === false)
+{
 	for (var i = 0; i < input.getPortCount(); i++)
 	{
 			console.log('Inputs available:', i, input.getPortName(i));
@@ -30,6 +41,12 @@ if (inputPort === false || outputHUIPort === false) {
 	{
 			console.log('Outputs available:', i, outputHUI.getPortName(i));
 	}
+
+	for (var i = 0; i < outputOctatrack.getPortCount(); i++)
+	{
+			console.log('Octatrack available:', i, outputOctatrack.getPortName(i));
+	}
+
 
 	console.log('Update config.json to any of the above values');
 
@@ -54,5 +71,7 @@ input.on('message', function(deltaTime, message) {
 input.ignoreTypes(false, false, false);
 input.openPort(inputPort);
 
+outputOctatrack
+console.log(outputOctatrack.getPortName(outputOctatrackPort), 'is the the Octatrack');
 console.log(outputHUI.getPortName(outputHUIPort), 'is the port that is showing fancy lights');
 console.log(input.getPortName(inputPort), 'is controlling Octatrack');
