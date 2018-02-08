@@ -1,9 +1,19 @@
 
 var exports = {};
 
+
 var Colors = function(output) {
   this.output = output;
 };
+
+Colors.OFF = 12;
+Colors.RED_LOW = 13;
+Colors.RED = 15;
+Colors.AMBER_LOW = 29;
+Colors.AMBER = 63;
+Colors.YELLOW = 62;
+Colors.GREEN = 28;
+Colors.GREEN_LOW = 60;
 
 Colors.prototype.setColor = function(template, index, value)
 {

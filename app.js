@@ -63,9 +63,11 @@ outputColors.setColor(8, 24, 58);
 
 input.on('message', function(deltaTime, message) {
   //console.log('m:' + message + ' d:' + deltaTime);
-	outputColors.setColor(8, 44, message[2]);
-	outputColors.setColor(8, 1, message[2]);
-	outputColors.setColor(8, 24, message[2]);
+	outputColors.setColor(8, 44, message[2] < 70 ? Colors.RED : Colors.RED_LOW);
+	outputColors.setColor(8, 1, message[2] < 70 ? Colors.OFF : Colors.AMBER_LOW);
+	outputColors.setColor(8, 24, message[2] < 70 ? Colors.GREEN_LOW : Colors.YELLOW);
+	outputColors.setColor(8, 25, message[2] < 70 ? Colors.GREEN : Colors.AMBER);
+	//outputColors.setColor(8, 24, message[2]);
 });
 
 input.ignoreTypes(false, false, false);
