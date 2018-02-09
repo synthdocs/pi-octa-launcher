@@ -1,12 +1,15 @@
 var midi = require('midi');
 var config = require('./config.json');
 var Colors = require('./Colors.js');
+var state = require('./state.js');
+var lcxl = require('./lcxl.js');
 var input = new midi.input();
 var outputHUI = new midi.output();
 var outputOctatrack = new midi.output();
 var inputPort = false;
 var outputHUIPort = false;
-var outputOctatrackPort = false;
+
+var soloState = [false, false, false, false, false, false, false, false];
 
 for (var i = 0; i < input.getPortCount(); i++)
 {
@@ -54,26 +57,48 @@ if (inputPort === false
 }
 
 outputHUI.openPort(outputHUIPort);
+outputOctatrack.openPort(outputOctatrackPort);
 var outputColors = new Colors(outputHUI);
-outputHUI.sendMessage([176+8, 0, 0]); // reset colors
-outputHUI.sendMessage([240,0,32,41,2,17,119,8,247]); // set factory template
 
-outputColors.setColor(8, 44, 58);
-outputColors.setColor(8, 24, 58);
+
+lcxl.init(outputHUI);
 
 input.on('message', function(deltaTime, message) {
-  //console.log('m:' + message + ' d:' + deltaTime);
-	outputColors.setColor(8, 44, message[2] < 70 ? Colors.RED : Colors.RED_LOW);
-	outputColors.setColor(8, 1, message[2] < 70 ? Colors.OFF : Colors.AMBER_LOW);
-	outputColors.setColor(8, 24, message[2] < 70 ? Colors.GREEN_LOW : Colors.YELLOW);
-	outputColors.setColor(8, 25, message[2] < 70 ? Colors.GREEN : Colors.AMBER);
-	//outputColors.setColor(8, 24, message[2]);
-});
 
+	// Faders
+	if (lcxl.isFader(message[1])) {
+		var fader = message[1] + 99;
+		outputOctatrack.sendMessage([fader, 46, message[2]]);
+		return;
+	}
+
+	if (lcxl.isSoloButton(message[0], message[1])) {
+			var soloButtonIndex = lcxl.getSoloButtonIndex(message[1]);
+			var newSoloButtonState = state.toggleSoloState(soloButtonIndex);
+			outputOctatrack.sendMessage([176+soloButtonIndex, 50, newSoloButtonState ? 1 : 0]);
+			lcxl.updateSoloState();
+			return;
+	}
+
+	if (lcxl.isMuteButton(message[0], message[1])) {
+		var muteButtonIndex = lcxl.getMuteButtonIndex(message[1]);
+		var newMuteButtonState = state.toggleMuteState(muteButtonIndex);
+		outputOctatrack.sendMessage([176+muteButtonIndex, 49, newMuteButtonState ? 1 : 0]);
+		lcxl.updateMuteState();
+		return;
+	}
+
+	console.log('m:' + message + ' d:' + deltaTime);
+});
+lcxl.switchToFactory();
+lcxl.resetColors();
+lcxl.updateSoloState();
+lcxl.updateMuteState();
 input.ignoreTypes(false, false, false);
 input.openPort(inputPort);
 
-outputOctatrack
+
+
 console.log(outputOctatrack.getPortName(outputOctatrackPort), 'is the the Octatrack');
 console.log(outputHUI.getPortName(outputHUIPort), 'is the port that is showing fancy lights');
 console.log(input.getPortName(inputPort), 'is controlling Octatrack');
