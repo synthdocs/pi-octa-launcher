@@ -9,6 +9,12 @@ var _blinkingState = [
   [0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0]
 ];
+var _machineState = [
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0]
+];
 var _currentTemplate = 0;
 var _turningPushingStates = [];
 
@@ -18,13 +24,40 @@ exports.initTemplateStates = function(){
     _turningPushingStates.push([
       [0,0,0,0,0,0,0,0],
       [0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0],
       [0,0,0,0,0,0,0,0]
     ]);
   };
 }
 
+var updateMachineState = function(x, y, value) {
+  _machineState[x][y] = value;
+}
+
 exports.updateCurrentState = function(x, y, value){
   _turningPushingStates[getCurrentTemplate()][x][y] = value;
+  updateMachineState(x, y, value);
+}
+
+var getMachineVsTemplateState = function()
+{
+  var knobState = _turningPushingStates[getCurrentTemplate()];
+  var machineState = _machineState;
+  var diff = [];
+  for (var x = 0; x < 3; x++) {
+    var tmp = [];
+    for (var y = 0; y < 8; y++) {
+      var tmpValue = 0;
+      if (knobState[x][y] > machineState[x][y]) {
+        tmpValue = 1;
+      } else if (knobState[x][y] < machineState[x][y]) {
+        tmpValue = -1;
+      }
+      tmp.push(tmpValue)
+    }
+    diff.push(tmp)
+  }
+  return diff;
 }
 
 exports.allStates = function(){
@@ -33,6 +66,8 @@ exports.allStates = function(){
 
 exports.printAllStates = function()
 {
+  console.log('diff', getMachineVsTemplateState())
+  console.log('machine', _machineState);
   console.log('knobs', _turningPushingStates);
   console.log('faders', _faderState);
   console.log('upper buttons', _soloState);
@@ -42,6 +77,7 @@ exports.printAllStates = function()
 exports.updateFaderState = function(x, value)
 {
   _faderState[x] = value;
+  updateMachineState(3, x, value);
 }
 
 exports.setCurrentTemplate = function(index)
@@ -85,6 +121,7 @@ exports.setMuteState = function(index, onOff)
 {
   _muteState[index] = onOff;
 }
+exports.updateMachineState = updateMachineState;
 exports.getCurrentTemplate = getCurrentTemplate;
 
 exports.initTemplateStates();
