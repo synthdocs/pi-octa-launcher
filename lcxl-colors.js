@@ -42,4 +42,6 @@ events.on('update_colors', () => {
   events.emit('setColors', soloColors.concat(muteColors, knobColors));
 });
 
+
+
 events.emit('update_colors');
