@@ -3,6 +3,7 @@ var config = require('./config.json');
 var midiDeviceFinder = require('./midi-device-finder.js');
 var _lcxlMidiOutDevice = midiDeviceFinder.findOutputWithName(config.lcxloutput);
 var template = 8;
+var cache = {};
 
 if (!_lcxlMidiOutDevice) {
   console.log('Missing devices');
@@ -20,7 +21,10 @@ events.on('forceTemplate', (nr = template) => {
 events.on('setColors', (indexValuePairs) => {
   _lcxlMidiOutDevice.sendMessage([240 ,0 ,32 ,41 ,2 ,17 ,120, template]);
   for(i=0;i<indexValuePairs.length;i++) {
-    _lcxlMidiOutDevice.sendMessage([indexValuePairs[i][0], indexValuePairs[i][1]]);
+    if (cache[indexValuePairs[i][0]] !== indexValuePairs[i][1]) {
+      cache[indexValuePairs[i][0]] = indexValuePairs[i][1];
+      _lcxlMidiOutDevice.sendMessage([indexValuePairs[i][0], indexValuePairs[i][1]]);
+    }
   }
   _lcxlMidiOutDevice.sendMessage([247]);
 });

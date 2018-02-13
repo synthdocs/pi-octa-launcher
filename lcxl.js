@@ -85,8 +85,9 @@ var getSoloButtonIndex = (parameter) => {
 }
 
 _lcxlMidiDevice.on('message', (deltaTime, message) => {
+  //console.log('message', message)
   if (isTemplateChange(message)) {
-    console.log(message)
+    console.log('changes real template', message)
     return;
   }
 
@@ -141,7 +142,10 @@ _lcxlMidiDevice.on('message', (deltaTime, message) => {
 
   if (message[0] === 184 && message[1] === 104) {
     events.emit('button_up', message[2] > 0);
-    return;
+  }
+
+  if (message[0] === 184 && message[1] === 105) {
+    events.emit('button_down', message[2] > 0);
   }
 
 

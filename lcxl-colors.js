@@ -18,29 +18,25 @@ events.on('update_colors', () => {
       knobColors.push([(y * 8) + x, _colors[y][x]]);
     }
   }
-
-  if (state.buttons.up) {
-    var muteColors = [0,0,0,0,0,0,0,0].map(function(item, index){
-      return [32+index, state.template() === index ? constants.COLOR_RED : constants.COLOR_GREEN_LOW]
-    });
-  } else {
-    var muteColors = state.buttons.muteButtons.map(function(item, index){
-      return [32+index, item ? constants.OFF : constants.COLOR_RED_LOW]
-    });
-  }
-
-  if (state.buttons.up) {
-    var soloColors = state.buttons.soloButtons.map(function(item, index){
-      return [24+index, constants.OFF]
-    });
-  } else {
-    var soloColors = state.buttons.soloButtons.map(function(item, index){
-      return [24+index, item ? constants.COLOR_GREEN : constants.COLOR_RED_LOW]
-    });
-  }
-
-  events.emit('setColors', soloColors.concat(muteColors, knobColors));
+  events.emit('setColors', knobColors);
 });
+
+setInterval(() => {
+  var _colors = state.colors();
+  state.blinking().forEach((row, y) => {
+    row.forEach((column, x) => {
+      if (column > 0) {
+        var saveColor = _colors[y][x],
+          index = (y*8) + x;
+        events.emit('setColors', [[index, constants.COLOR_OFF]]);
+        setTimeout(() => {
+          events.emit('setColors', [[index, saveColor]]);
+        }, 250);
+      }
+    })
+
+  })
+}, 500)
 
 
 
