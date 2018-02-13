@@ -1,6 +1,14 @@
 # pi-octa-launcher
 Using Novation LaunchControl XL with Elektron Octatrack through a Raspberry Pi
 
+## Install
+
+Install Node/NPM.
+
+run npm install
+
+run node app.js
+
 ## LaunchControl XL Reference Manual
 https://d2xhy469pqj8rc.cloudfront.net/sites/default/files/novation/downloads/9922/launch-control-xl-programmers-reference-guide.pdf
 
