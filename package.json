@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "jsonfile": "^4.0.0",
     "midi": "^0.9.5"
   },
   "devDependencies": {},

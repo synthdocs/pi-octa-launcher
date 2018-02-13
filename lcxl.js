@@ -1,78 +1,19 @@
-var Colors = require('./Colors.js');
+var events = require('./events.js');
+var midiDeviceFinder = require('./midi-device-finder.js');
+var config = require('./config.json');
 var state = require('./state.js');
+var _lcxlMidiDevice = midiDeviceFinder.findInputWithName(config.lcxlinput);
 
-var exports = {};
-var _output = null;
-var _outputColors = null
-
-
-exports.init = function(output)
-{
-  _output = output;
-  _outputColors = new Colors(_output);
-
-  exports.switchToUser();
-  exports.resetColors();
-  exports.updateSoloState();
-  exports.updateMuteState();
+if (!_lcxlMidiDevice) {
+  console.log('Missing devices');
+  process.exit()
 }
 
-exports.resetColors = function()
-{
-  for (var i = 0 ; i < 8; i++ ) {
-    _outputColors.setColors(i, [
-        [0, Colors.RED],
-        [1, Colors.RED],
-        [2, Colors.GREEN],
-        [3, Colors.GREEN],
-        [4, Colors.GREEN],
-        [5, Colors.AMBER],
-        [6, Colors.AMBER],
-        [7, Colors.AMBER],
-        [8, Colors.RED],
-        [9, Colors.RED],
-        [10, Colors.GREEN],
-        [11, Colors.GREEN],
-        [12, Colors.GREEN],
-        [13, Colors.AMBER],
-        [14, Colors.AMBER],
-        [15, Colors.AMBER],
-        [16, Colors.RED],
-        [17, Colors.RED],
-        [18, Colors.YELLOW],
-        [19, Colors.YELLOW],
-        [20, Colors.YELLOW],
-        [21, Colors.GREEN],
-        [22, Colors.GREEN],
-        [23, Colors.GREEN]
-      ]);
-  }
-}
+var isFader = (control, parameter) => {
+  return control === 184 && parameter > 76 && parameter < 85;
+};
 
-exports.switchToUser = function() {
-  _output.sendMessage([240,0,32,41,2,17,119,0,247]);
-}
-
-exports.isFader = function(control, parameter) {
-  return control === 176 && parameter > 76 && parameter < 85;
-}
-
-exports.getKnob = function(message){
-  if (message[0] === 176) {
-    if (13 <= message[1] && message[1] <= 20) {
-      return [0, message[1] - 13];
-    }
-    if (29 <= message[1] && message[1] <= 36) {
-      return [1, message[1] - 29];
-    }
-    if (49 <= message[1] && message[1] <= 56) {
-      return [2, message[1] - 49];
-    }
-  }
-  return false;
-}
-
-exports.isTemplateChange = function(messages) {
+var isTemplateChange = (messages) => {
   var truth = [240,0,32,41,2,17,119];
   if (
     truth[0] === messages[0] &&
@@ -86,27 +27,10 @@ exports.isTemplateChange = function(messages) {
     return true;
   }
   return false;
-}
+};
 
-exports.whichTemplateOn = function(messages) {
-  return messages[7];
-}
-
-exports.updateSoloState = function(){
-  var soloState = state.getSoloState();
-
-  var states = soloState.map(function(item, index){
-    return [24+index, item ? Colors.GREEN : Colors.RED_LOW]
-  });
-
-  for (var i=0; i<8;i++) {
-    _outputColors.setColors(i, states);
-  }
-}
-
-exports.isSoloButton = function(control, parameter)
-{
-		if (control === 144) {
+var isSoloButton = (control, parameter) => {
+		if (control === 152) {
 			if (parameter >= 41 && parameter <= 44) {
 				return true;
 			}
@@ -115,16 +39,10 @@ exports.isSoloButton = function(control, parameter)
 			}
 		}
 		return false;
-}
+};
 
-exports.getSoloButtonIndex = function(parameter)
-{
-  return (parameter > 40 && parameter < 45) ? parameter - 41 :  parameter - 53;
-}
-
-exports.isMuteButton = function(control, parameter)
-{
-  if (control === 144) {
+var isMuteButton = (control, parameter) => {
+  if (control === 152) {
     if (parameter >= 73 && parameter <= 76) {
       return true;
     }
@@ -133,22 +51,102 @@ exports.isMuteButton = function(control, parameter)
     }
   }
   return false;
+};
+
+var isTrackMute = (parameter) => {
+  return parameter === 106 || parameter === 58;
+};
+
+var isTrackSolo = (parameter) => {
+  return parameter === 107 || parameter === 59;
+};
+
+var getKnob = (message) => {
+  if (message[0] === 184) {
+    if (13 <= message[1] && message[1] <= 20) {
+      return [0, message[1] - 13];
+    }
+    if (29 <= message[1] && message[1] <= 36) {
+      return [1, message[1] - 29];
+    }
+    if (49 <= message[1] && message[1] <= 56) {
+      return [2, message[1] - 49];
+    }
+  }
+  return false;
 }
 
-exports.getMuteButtonIndex = function(parameter)
-{
+var getMuteButtonIndex = (parameter) => {
   return (parameter >= 73 && parameter <= 76) ? parameter - 73 : parameter - 85;
 }
 
-exports.updateMuteState = function(){
-  var soloState = state.getMuteState();
-  var states = soloState.map(function(item, index){
-    return [32+index, item ? Colors.OFF : Colors.RED_LOW]
-  });
-
-  for (var i=0; i<8;i++) {
-    _outputColors.setColors(i, states);
-  }
+var getSoloButtonIndex = (parameter) => {
+  return (parameter > 40 && parameter < 45) ? parameter - 41 :  parameter - 53;
 }
 
-module.exports = exports;
+_lcxlMidiDevice.on('message', (deltaTime, message) => {
+  //console.log('message', message)
+  if (isTemplateChange(message)) {
+    console.log('changes real template', message)
+    return;
+  }
+
+  // Faders
+	if (isFader(message[0], message[1])) {
+    events.emit('lcxl_fader', message[1] - 77,  message[2]);
+		return;
+	}
+
+  var knob = getKnob(message)
+  if (knob !== false) {
+    events.emit('turnedOrPushed', knob[0], knob[1], message[2])
+    return;
+  }
+
+  if(isSoloButton(message[0], message[1])) {
+    if (state.buttons.up) {
+
+    } else {
+      events.emit('bottom_solo_button_toggle', getSoloButtonIndex(message[1]));
+      events.emit('update_colors');
+    }
+
+    return;
+  }
+
+  if(isMuteButton(message[0], message[1])) {
+    var muteButtonIndex = getMuteButtonIndex(message[1]);
+    if (state.buttons.up) {
+      events.emit('setTemplate', muteButtonIndex);
+    } else {
+      events.emit('bottom_mute_button_toggle', muteButtonIndex);
+    }
+    events.emit('update_colors');
+    return;
+  }
+
+  if (isTrackMute(message[1])) {
+    events.emit('mute_button', message[2] > 0);
+    return;
+  }
+
+  if (isTrackSolo(message[1])) {
+    events.emit('solo_button', message[2] > 0);
+    return;
+  }
+
+  if (message[0] === 152 && message[1] === 108 && message[2] === 127 ) {
+		events.emit('printAllStates');
+    return;
+	}
+
+  if (message[0] === 184 && message[1] === 104) {
+    events.emit('button_up', message[2] > 0);
+  }
+
+  if (message[0] === 184 && message[1] === 105) {
+    events.emit('button_down', message[2] > 0);
+  }
+
+
+});
