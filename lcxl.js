@@ -93,7 +93,7 @@ _lcxlMidiDevice.on('message', (deltaTime, message) => {
 
   // Faders
 	if (isFader(message[0], message[1])) {
-    events.emit('turnedOrPushed', 3, message[1] - 77,  message[2]);
+    events.emit('lcxl_fader', message[1] - 77,  message[2]);
 		return;
 	}
 
@@ -126,12 +126,12 @@ _lcxlMidiDevice.on('message', (deltaTime, message) => {
   }
 
   if (isTrackMute(message[1])) {
-    console.log('track mute', message[2] > 0);
+    events.emit('mute_button', message[2] > 0);
     return;
   }
 
   if (isTrackSolo(message[1])) {
-    console.log('track solo', message[2] > 0);
+    events.emit('solo_button', message[2] > 0);
     return;
   }
 

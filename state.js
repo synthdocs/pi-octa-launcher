@@ -8,6 +8,7 @@ var _machineState = [
   [0,0,0,0,0,0,0,0]
 ];
 var _turningPushingStates = [];
+var _faderState = [0,0,0,0,0,0,0,0];
 var _buttons = {
   up: false,
   down: false,
@@ -19,7 +20,6 @@ var _buttons = {
 
 for (var i = 0; i < 8; i++) {
   _turningPushingStates.push([
-    [0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0]
@@ -44,9 +44,13 @@ events.on('setTemplate', (index) => {
 });
 
 events.on('setTemplate', () => {
+  events.emit('knob_blinks_update');
+});
+
+events.on('knob_blinks_update', () => {
   var currentTemplateMidi = _turningPushingStates[_fakeTemplateNumber];
-  for (var y = 0; y < _machineState.length; y++) {
-    for (var x = 0; x < _machineState[y].length; x++) {
+  for (var y = 0; y < 3; y++) {
+    for (var x = 0; x < 8; x++) {
       var diff = _machineState[y][x]-currentTemplateMidi[y][x];
       var minDiff = Math.abs(diff);
 
@@ -60,6 +64,51 @@ events.on('setTemplate', () => {
   }
 });
 
+events.on('fader_blinks_update', () => {
+  var faderIndex = 3;
+  for(var x = 0; x < _faderState.length; x++) {
+    var diff = _machineState[3][x]-_faderState[x];
+    var minDiff = Math.abs(diff);
+
+    if (!blinkingState(faderIndex, x) && minDiff>5) {
+      events.emit('blinking_color', faderIndex, x, diff <= 0 ? 2 : 1);
+    }
+    if (blinkingState(faderIndex, x) && minDiff<5) {
+      events.emit('blinking_color', faderIndex, x, -1);
+    }
+  }
+})
+
+events.on('lcxl_fader', (index, value) => {
+  var y = 3;
+  _machineState[y][index] = value;
+  var minDiff = Math.abs(_faderState[index] - _machineState[y][index]);
+  if(blinkingState(y, index) > 0){
+    if (minDiff < 10) {
+      events.emit('blinking_color', y, index, -1);
+    }
+    return;
+  }
+  _faderState[index] = value;
+  events.emit('octatrack_forward_fader', index, value);
+})
+
+events.on('octatrack_fader', (index, value) => {
+  _faderState[index] = value;
+  events.emit('fader_blinks_update');
+});
+
+events.on('octatrack_knob', (channel, y, x, value) => {
+  _turningPushingStates[channel][y][x] = value;
+  events.emit('knob_blinks_update');
+});
+
+events.on('fader', (index, value) => {
+  _faderState[index] = value;
+  events.emit('octatrack_forward_fader', index, value);
+  events.emit('fader_blinks_update');
+});
+
 events.on('turnedOrPushed', (y, x, value) => {
   _machineState[y][x] = value;
   var minDiff = Math.abs(_turningPushingStates[_fakeTemplateNumber][y][x] - _machineState[y][x]);
@@ -69,18 +118,20 @@ events.on('turnedOrPushed', (y, x, value) => {
     }
     return;
   }
-  events.emit('octatrack_forward');
+  events.emit('octatrack_forward_knobs', _fakeTemplateNumber, y, x, value);
   _turningPushingStates[_fakeTemplateNumber][y][x] = value;
 });
 
 events.on('bottom_solo_button', (x) => {
   _buttons.soloButtons[x] ^= true;
+  events.emit('octatrack_solo', x, _buttons.soloButtons[x]);
   events.emit('update_solo_button_row');
   events.emit('update_colors');
 });
 
 events.on('bottom_mute_button', (x) => {
   _buttons.muteButtons[x] ^= true;
+  events.emit('octatrack_mute', x, _buttons.muteButtons[x]);
   events.emit('update_mute_button_row');
   events.emit('update_colors');
 });
@@ -98,6 +149,20 @@ events.on('button_up', (onOff) => {
     events.emit('update_solo_button_row');
     events.emit('update_mute_button_row');
   }
+  events.emit('update_colors');
+});
+
+events.on('solo_button', (onOff) => {
+  _buttons.soloButtons[_fakeTemplateNumber] = onOff;
+  events.emit('octatrack_solo', _fakeTemplateNumber, onOff);
+  events.emit('update_solo_button_row');
+  events.emit('update_colors');
+});
+
+events.on('mute_button', (onOff) => {
+  _buttons.muteButtons[_fakeTemplateNumber] = onOff;
+  events.emit('octatrack_mute', _fakeTemplateNumber, onOff);
+  events.emit('update_mute_button_row');
   events.emit('update_colors');
 });
 
