@@ -9,6 +9,8 @@ run npm install
 
 run node app.js
 
+Copy config.json.example to config.json and change values.
+
 ## LaunchControl XL Reference Manual
 https://d2xhy469pqj8rc.cloudfront.net/sites/default/files/novation/downloads/9922/launch-control-xl-programmers-reference-guide.pdf
 
