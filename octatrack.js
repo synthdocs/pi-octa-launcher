@@ -6,8 +6,8 @@ var input = midiDeviceFinder.findInputWithName(config.octatrackinput);
 
 var yxToParameter = [
   [16, 17, 34, 35, 36, 40, 41, 42],
-  [18, 19, 37, 37, 39, 43, 44, 45],
-  [20, 21, 31, 32, 33, 22, 24, 26],
+  [18, 19, 37, 38, 39, 43, 44, 45],
+  [20, 21, 28, 29, 30, 22, 24, 26],
 ];
 
 var parameterToXY = (() => {
@@ -54,7 +54,7 @@ input.on('message', (delta, message) => {
 
   // all knobs
   var xy = parameterToXY[message[1]];
-  if (xy) {
+  if (channel > 0 && xy) {
     events.emit('octatrack_knob', channel, xy[0], xy[1], message[2]);
     return;
   }
@@ -70,5 +70,5 @@ input.on('message', (delta, message) => {
     events.emit('bottom_mute_button', channel, message[2] > 0);
     return;
   }
-  console.log(message)
+
 });

@@ -53,12 +53,14 @@ var isMuteButton = (control, parameter) => {
   return false;
 };
 
-var isTrackMute = (parameter) => {
-  return parameter === 106 || parameter === 58;
+var isTrackMute = (channel, parameter) => {
+  return (channel === 152 && parameter === 106)
+    || (channel === 136 && parameter === 106);
 };
 
-var isTrackSolo = (parameter) => {
-  return parameter === 107 || parameter === 59;
+var isTrackSolo = (channel, parameter) => {
+  return (channel === 152 && parameter === 107)
+    || (channel === 136 && parameter === 107);
 };
 
 var getKnob = (message) => {
@@ -85,7 +87,8 @@ var getSoloButtonIndex = (parameter) => {
 }
 
 _lcxlMidiDevice.on('message', (deltaTime, message) => {
-  //console.log('message', message)
+  // console.log('message', message)
+
   if (isTemplateChange(message)) {
     console.log('changes real template', message)
     return;
@@ -125,28 +128,39 @@ _lcxlMidiDevice.on('message', (deltaTime, message) => {
     return;
   }
 
-  if (isTrackMute(message[1])) {
+  if (isTrackMute(message[0], message[1])) {
     events.emit('mute_button', message[2] > 0);
     return;
   }
 
-  if (isTrackSolo(message[1])) {
+  if (isTrackSolo(message[0], message[1])) {
     events.emit('solo_button', message[2] > 0);
     return;
   }
 
   if (message[0] === 152 && message[1] === 108 && message[2] === 127 ) {
-		events.emit('printAllStates');
+		//events.emit('printAllStates');
     return;
 	}
 
   if (message[0] === 184 && message[1] === 104) {
     events.emit('button_up', message[2] > 0);
+    return;
   }
 
   if (message[0] === 184 && message[1] === 105) {
     events.emit('button_down', message[2] > 0);
+    return;
   }
 
+  if (message[0] === 184 && message[1] === 106) {
+    events.emit('button_left', message[2] > 0);
+    return;
+  }
+
+  if (message[0] === 184 && message[1] === 107) {
+    events.emit('button_right', message[2] > 0);
+    return;
+  }
 
 });

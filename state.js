@@ -101,8 +101,12 @@ events.on('octatrack_fader', (index, value) => {
 });
 
 events.on('octatrack_knob', (channel, y, x, value) => {
-  _turningPushingStates[channel][y][x] = value;
-  events.emit('knob_blinks_update');
+  try {
+    _turningPushingStates[channel][y][x] = value;
+    events.emit('knob_blinks_update');
+  } catch (e) {
+    console.log('octatrack error', channel, y, x, value);
+  }
 });
 
 events.on('fader', (index, value) => {
@@ -151,13 +155,47 @@ events.on('printAllStates', () => {
   console.log('templates', _turningPushingStates);
 })
 
+var defaultColorRows = () => {
+  events.emit('update_solo_button_row');
+  events.emit('update_mute_button_row');
+}
+
 events.on('button_up', (onOff) => {
   _buttons.up = onOff;
   if (onOff) {
     events.emit('update_select_template_colors');
   } else {
-    events.emit('update_solo_button_row');
-    events.emit('update_mute_button_row');
+    defaultColorRows()
+  }
+  events.emit('update_colors');
+});
+
+events.on('button_down', (onOff) => {
+  _buttons.down = onOff;
+  if (onOff) {
+    events.emit('empty_bottom_colors');
+  } else {
+    defaultColorRows()
+  }
+  events.emit('update_colors');
+})
+
+events.on('button_left', (onOff) => {
+  _buttons.left = onOff;
+  if (onOff) {
+    events.emit('empty_bottom_colors');
+  } else {
+    defaultColorRows()
+  }
+  events.emit('update_colors');
+});
+
+events.on('button_right', (onOff) => {
+  _buttons.right = onOff;
+  if (onOff) {
+    events.emit('empty_bottom_colors');
+  } else {
+    defaultColorRows()
   }
   events.emit('update_colors');
 });
@@ -205,6 +243,13 @@ events.on('update_select_template_colors', () => {
   [0,0,0,0,0,0,0,0].forEach((item, index) => {
     _colors[3][index] = constants.OFF;
     _colors[4][index] = _fakeTemplateNumber === index ? constants.COLOR_RED : constants.COLOR_GREEN_LOW;
+  })
+})
+
+events.on('empty_bottom_colors', () => {
+  [0,0,0,0,0,0,0,0].forEach((item, index) => {
+    _colors[3][index] = constants.OFF;
+    _colors[4][index] = constants.OFF;
   })
 })
 
