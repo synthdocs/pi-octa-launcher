@@ -34,13 +34,9 @@ var _colors = [
   [constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW]
 ];
 
-var _blinking = [
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0]
-];
+var _blinkingCache = {};
+
+var blinkingState = (y, x) =>  _blinkingCache[y + '_' + x];
 
 events.on('setTemplate', (index) => {
   _fakeTemplateNumber = index;
@@ -51,12 +47,13 @@ events.on('setTemplate', () => {
   var currentTemplateMidi = _turningPushingStates[_fakeTemplateNumber];
   for (var y = 0; y < _machineState.length; y++) {
     for (var x = 0; x < _machineState[y].length; x++) {
-      var minDiff = Math.abs(_machineState[y][x]-currentTemplateMidi[y][x]);
+      var diff = _machineState[y][x]-currentTemplateMidi[y][x];
+      var minDiff = Math.abs(diff);
 
-      if (!_blinking[y][x] && minDiff>5) {
-        events.emit('blinking_color', y, x, 1);
+      if (!blinkingState(y, x) && minDiff>5) {
+        events.emit('blinking_color', y, x, diff <= 0 ? 2 : 1);
       }
-      if (_blinking[y][x] && minDiff<5) {
+      if (blinkingState(y, x) && minDiff<5) {
         events.emit('blinking_color', y, x, -1);
       }
     }
@@ -66,7 +63,7 @@ events.on('setTemplate', () => {
 events.on('turnedOrPushed', (y, x, value) => {
   _machineState[y][x] = value;
   var minDiff = Math.abs(_turningPushingStates[_fakeTemplateNumber][y][x] - _machineState[y][x]);
-  if (_blinking[y][x] > 0) {
+  if (blinkingState(y, x) > 0) {
     if (minDiff < 10) {
       events.emit('blinking_color', y, x, -1);
     }
@@ -105,7 +102,12 @@ events.on('button_up', (onOff) => {
 });
 
 events.on('blinking_color', (y, x, blinking) => {
-  _blinking[y][x] = blinking;
+  var index = (y*8) + x;
+  if (blinking > 0) {
+    _blinkingCache[y + '_' + x] = blinking;
+  } else {
+    delete _blinkingCache[y + '_' + x];
+  }
 });
 
 events.on('update_solo_button_row', () => {
@@ -131,5 +133,5 @@ module.exports = {
   buttons: _buttons,
   template: () => { return _fakeTemplateNumber; },
   colors: () => { return _colors; },
-  blinking: () => { return _blinking; }
+  blinking: () => { return _blinkingCache; }
 };

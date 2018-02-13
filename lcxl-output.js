@@ -19,14 +19,25 @@ events.on('forceTemplate', (nr = template) => {
 });
 
 events.on('setColors', (indexValuePairs) => {
-  _lcxlMidiOutDevice.sendMessage([240 ,0 ,32 ,41 ,2 ,17 ,120, template]);
+  // _lcxlMidiOutDevice.sendMessage([240 ,0 ,32 ,41 ,2 ,17 ,120, template]);
+  // for(i=0;i<indexValuePairs.length;i++) {
+  //   if (cache[indexValuePairs[i][0]] !== indexValuePairs[i][1]) {
+  //     cache[indexValuePairs[i][0]] = indexValuePairs[i][1];
+  //     _lcxlMidiOutDevice.sendMessage([indexValuePairs[i][0], indexValuePairs[i][1]]);
+  //   }
+  // }
+  // _lcxlMidiOutDevice.sendMessage([247]);
+
+  var messages = [240 ,0 ,32 ,41 ,2 ,17 ,120, template];
+  //_lcxlMidiOutDevice.sendMessage([240 ,0 ,32 ,41 ,2 ,17 ,120, template]);
   for(i=0;i<indexValuePairs.length;i++) {
     if (cache[indexValuePairs[i][0]] !== indexValuePairs[i][1]) {
       cache[indexValuePairs[i][0]] = indexValuePairs[i][1];
-      _lcxlMidiOutDevice.sendMessage([indexValuePairs[i][0], indexValuePairs[i][1]]);
+      messages.push(indexValuePairs[i][0], indexValuePairs[i][1]);
     }
   }
-  _lcxlMidiOutDevice.sendMessage([247]);
+  messages.push(247);
+  _lcxlMidiOutDevice.sendMessage(messages);
 });
 
 events.emit('initLCXL');

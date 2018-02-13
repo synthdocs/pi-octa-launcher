@@ -21,23 +21,29 @@ events.on('update_colors', () => {
   events.emit('setColors', knobColors);
 });
 
-setInterval(() => {
+var colorBlinker = (item, timeout = 250) => {
   var _colors = state.colors();
-  state.blinking().forEach((row, y) => {
-    row.forEach((column, x) => {
-      if (column > 0) {
-        var saveColor = _colors[y][x],
-          index = (y*8) + x;
-        events.emit('setColors', [[index, constants.COLOR_OFF]]);
-        setTimeout(() => {
-          events.emit('setColors', [[index, saveColor]]);
-        }, 250);
-      }
-    })
+  var [y, x] = item.split('_');
+  var saveColor = _colors[y][x],
+    index = ((+y)*8) + (+x);
+  events.emit('setColors', [[index, constants.COLOR_OFF]]);
+  setTimeout(() => {
+    events.emit('setColors', [[index, saveColor]]);
+  }, timeout);
+}
 
+setInterval(() => {
+  var _blinking = state.blinking();
+  Object.keys(_blinking).filter((item) => _blinking[item] === 1).forEach((item) => {
+    colorBlinker(item);
   })
 }, 500)
 
-
+setInterval(() => {
+  var _blinking = state.blinking();
+  Object.keys(_blinking).filter((item) => _blinking[item] === 2).forEach((item) => {
+    colorBlinker(item, 125);
+  })
+}, 250)
 
 events.emit('update_colors');
