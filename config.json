@@ -2,5 +2,6 @@
 	"lcxlinput": "Launch Control XL",
 	"octatrackinput": "MIDISPORT 2x2 Port B",
 	"lcxloutput": "Launch Control XL",
-	"octatrackoutput": "MIDISPORT 2x2 Port B"
+	"octatrackoutput": "MIDISPORT 2x2 Port B",
+	"save_file": "/tmp/lcxl_octa_state.json"
 }

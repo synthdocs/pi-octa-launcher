@@ -1,5 +1,6 @@
 var events = require('./events.js');
 var constants = require('./constants.js');
+var file = require('./file.js');
 var _fakeTemplateNumber = 0;
 var _machineState = [
   [0,0,0,0,0,0,0,0],
@@ -30,7 +31,7 @@ var _colors = [
   [constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_GREEN, constants.COLOR_GREEN, constants.COLOR_GREEN, constants.COLOR_AMBER, constants.COLOR_AMBER, constants.COLOR_AMBER],
   [constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_GREEN, constants.COLOR_GREEN, constants.COLOR_GREEN, constants.COLOR_AMBER, constants.COLOR_AMBER, constants.COLOR_AMBER],
   [constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_YELLOW, constants.COLOR_YELLOW, constants.COLOR_YELLOW, constants.COLOR_GREEN, constants.COLOR_GREEN, constants.COLOR_GREEN],
-  [constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW],
+  [constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_RED, constants.COLOR_RED],
   [constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW, constants.COLOR_RED_LOW]
 ];
 
@@ -45,6 +46,7 @@ events.on('setTemplate', (index) => {
 
 events.on('setTemplate', () => {
   events.emit('knob_blinks_update');
+  events.emit('fader_blinks_update');
 });
 
 events.on('knob_blinks_update', () => {
@@ -122,16 +124,24 @@ events.on('turnedOrPushed', (y, x, value) => {
   _turningPushingStates[_fakeTemplateNumber][y][x] = value;
 });
 
-events.on('bottom_solo_button', (x) => {
-  _buttons.soloButtons[x] ^= true;
+events.on('bottom_solo_button_toggle', (x) => {
+  events.emit('bottom_solo_button', x, !_buttons.soloButtons[x]);
+});
+
+events.on('bottom_solo_button', (x, onOff) => {
+  _buttons.soloButtons[x] = onOff;
   events.emit('octatrack_solo', x, _buttons.soloButtons[x]);
   events.emit('update_solo_button_row');
   events.emit('update_colors');
+})
+
+events.on('bottom_mute_button_toggle', (x) => {
+  events.emit('bottom_mute_button', x, !_buttons.muteButtons[x]);
 });
 
-events.on('bottom_mute_button', (x) => {
-  _buttons.muteButtons[x] ^= true;
-  events.emit('octatrack_mute', x, _buttons.muteButtons[x]);
+events.on('bottom_mute_button', (x, onOff) => {
+  _buttons.muteButtons[x] = onOff;
+  events.emit('octatrack_mute', x, onOff);
   events.emit('update_mute_button_row');
   events.emit('update_colors');
 });
@@ -176,8 +186,12 @@ events.on('blinking_color', (y, x, blinking) => {
 });
 
 events.on('update_solo_button_row', () => {
+  var hasSolo = _buttons.soloButtons.filter((item) => {
+    return item;
+  }).length > 0;
+
   _buttons.soloButtons.forEach(function(item, index){
-    _colors[3][index] = item ? constants.COLOR_GREEN : constants.COLOR_RED_LOW;
+    _colors[3][index] = item ? constants.COLOR_GREEN : hasSolo ? constants.COLOR_RED_LOW : constants.COLOR_RED;
   })
 });
 
@@ -193,6 +207,34 @@ events.on('update_select_template_colors', () => {
     _colors[4][index] = _fakeTemplateNumber === index ? constants.COLOR_RED : constants.COLOR_GREEN_LOW;
   })
 })
+
+events.on('update_all_colors', () => {
+  events.emit('knob_blinks_update');
+  events.emit('fader_blinks_update');
+  events.emit('update_solo_button_row');
+  events.emit('update_mute_button_row');
+  events.emit('update_colors');
+})
+
+setInterval(() => {
+  file.save({
+    _machineState: _machineState,
+    _turningPushingStates: _turningPushingStates,
+    _fakeTemplateNumber: _fakeTemplateNumber,
+    _buttons: _buttons,
+    _blinkingCache: _blinkingCache,
+    _faderState: _faderState
+  });
+}, 1000);
+
+
+var data = file.read();
+_buttons = data._buttons || _buttons;
+_machineState = data._machineState || _machineState;
+_turningPushingStates = data._turningPushingStates || _turningPushingStates;
+_fakeTemplateNumber = data._fakeTemplateNumber || _fakeTemplateNumber;
+_blinkingCache = data._blinkingCache || _blinkingCache;
+_faderState = data._faderState || _faderState;
 
 module.exports = {
   buttons: _buttons,

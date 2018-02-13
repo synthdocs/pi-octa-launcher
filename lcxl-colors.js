@@ -45,5 +45,3 @@ setInterval(() => {
     colorBlinker(item, 125);
   })
 }, 250)
-
-events.emit('update_colors');

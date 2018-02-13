@@ -4,7 +4,6 @@ var midiDeviceFinder = require('./midi-device-finder.js');
 var output = midiDeviceFinder.findOutputWithName(config.octatrackoutput);
 var input = midiDeviceFinder.findInputWithName(config.octatrackinput);
 
-
 var yxToParameter = [
   [16, 17, 34, 35, 36, 40, 41, 42],
   [18, 19, 37, 37, 39, 43, 44, 45],
@@ -45,18 +44,31 @@ events.on('octatrack_mute', (channel, onOff) => {
 });
 
 input.on('message', (delta, message) => {
+  var channel = message[0] - 176;
+
+  // faders
   if (message[1] === 46) {
-    var fader = message[0] - 176;
-    events.emit('octatrack_fader', fader, message[2]);
+    events.emit('octatrack_fader', channel, message[2]);
     return ;
   }
 
-  var channel = message[0] - 176;
+  // all knobs
   var xy = parameterToXY[message[1]];
   if (xy) {
     events.emit('octatrack_knob', channel, xy[0], xy[1], message[2]);
     return;
   }
 
-  console.log(channel, message);
+  // solo track
+  if (message[1] === 50) {
+    events.emit('bottom_solo_button', channel, message[2] > 0);
+    return;
+  }
+
+  // mute track
+  if (message[1] === 49) {
+    events.emit('bottom_mute_button', channel, message[2] > 0);
+    return;
+  }
+  console.log(message)
 });

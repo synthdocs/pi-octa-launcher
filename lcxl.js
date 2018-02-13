@@ -107,7 +107,7 @@ _lcxlMidiDevice.on('message', (deltaTime, message) => {
     if (state.buttons.up) {
 
     } else {
-      events.emit('bottom_solo_button', getSoloButtonIndex(message[1]));
+      events.emit('bottom_solo_button_toggle', getSoloButtonIndex(message[1]));
       events.emit('update_colors');
     }
 
@@ -119,7 +119,7 @@ _lcxlMidiDevice.on('message', (deltaTime, message) => {
     if (state.buttons.up) {
       events.emit('setTemplate', muteButtonIndex);
     } else {
-      events.emit('bottom_mute_button', muteButtonIndex);
+      events.emit('bottom_mute_button_toggle', muteButtonIndex);
     }
     events.emit('update_colors');
     return;
