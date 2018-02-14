@@ -18,6 +18,10 @@ events.on('forceTemplate', (nr = template) => {
   _lcxlMidiOutDevice.sendMessage([240,0,32,41,2,17,119,nr,247]);
 });
 
+events.on('clean_lcxl', () => {
+  _lcxlMidiOutDevice.sendMessage([176+8, 0, 0]);
+})
+
 events.on('setColors', (indexValuePairs) => {
   var messages = [];
   for(i=0;i<indexValuePairs.length;i++) {

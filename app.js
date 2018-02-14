@@ -6,3 +6,6 @@ var lcxlOutput = require('./lcxl-output.js');
 var lcxlColors = require('./lcxl-colors.js');
 var octatrack = require('./octatrack.js');
 var lcxl = require('./lcxl.js');
+
+events.emit('clean_lcxl');
+events.emit('update_all_colors');
