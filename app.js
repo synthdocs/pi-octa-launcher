@@ -9,3 +9,4 @@ var lcxl = require('./lcxl.js');
 
 events.emit('clean_lcxl');
 events.emit('update_all_colors');
+events.emit('sync_octa_state');

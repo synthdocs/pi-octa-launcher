@@ -177,6 +177,9 @@ events.on('button_down', (onOff) => {
   } else {
     defaultColorRows()
   }
+  if (_buttons.down) {
+    events.emit('sync_octa_state');
+  }
   events.emit('update_colors');
 })
 
@@ -274,12 +277,8 @@ setInterval(() => {
 
 
 var data = file.read();
-_buttons = data._buttons || _buttons;
 _machineState = data._machineState || _machineState;
-_turningPushingStates = data._turningPushingStates || _turningPushingStates;
 _fakeTemplateNumber = data._fakeTemplateNumber || _fakeTemplateNumber;
-_blinkingCache = data._blinkingCache || _blinkingCache;
-_faderState = data._faderState || _faderState;
 
 module.exports = {
   buttons: _buttons,
