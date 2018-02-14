@@ -1,5 +1,3 @@
-//var Colors = require('./Colors.js');
-//var state = require('./state.js');
 var midi = require('midi');
 var exports = {};
 

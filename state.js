@@ -37,7 +37,9 @@ var _colors = [
 
 var _blinkingCache = {};
 
-var blinkingState = (y, x) =>  _blinkingCache[y + '_' + x];
+var blinkingState = (y, x) =>  {
+  return _blinkingCache[y + '_' + x] || -1;
+};
 
 events.on('setTemplate', (index) => {
   _fakeTemplateNumber = index;
@@ -56,10 +58,11 @@ events.on('knob_blinks_update', () => {
       var diff = _machineState[y][x]-currentTemplateMidi[y][x];
       var minDiff = Math.abs(diff);
 
-      if (!blinkingState(y, x) && minDiff>5) {
+      var blinkState = blinkingState(y, x);
+      if (blinkState < 0  && minDiff > 5) {
         events.emit('blinking_color', y, x, diff <= 0 ? 2 : 1);
       }
-      if (blinkingState(y, x) && minDiff<5) {
+      if (blinkState > 0 && minDiff<5) {
         events.emit('blinking_color', y, x, -1);
       }
     }

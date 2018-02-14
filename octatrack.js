@@ -53,6 +53,8 @@ events.on('sync_octa_state', () => {
 
 input && input.on('message', (delta, message) => {
   var channel = message[0] - 176;
+
+
   // faders
   if (message[1] === 46) {
     events.emit('octatrack_fader', channel, message[2]);
@@ -61,7 +63,7 @@ input && input.on('message', (delta, message) => {
 
   // all knobs
   var xy = parameterToXY[message[1]];
-  if (channel > 0 && xy) {
+  if (channel >= 0 &&  Array.isArray(xy)) {
     events.emit('octatrack_knob', channel, xy[0], xy[1], message[2]);
     return;
   }
@@ -77,5 +79,5 @@ input && input.on('message', (delta, message) => {
     events.emit('bottom_mute_button', channel, message[2] > 0);
     return;
   }
-  console.log(message);
+
 });
